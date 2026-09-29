@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Quota Monitor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #202124;
+            padding: 16px;
+            user-select: none;
+            width: 320px;
+            /* 말풍선 메뉴로 뜰 때의 기본 가로폭 */
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a73e8;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mode-select {
+            font-size: 11px;
+            padding: 2px 4px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            background: #fff;
+            color: #5f6368;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .popout-btn {
+            font-size: 11px;
+            background: none;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px 6px;
+            color: #5f6368;
+        }
+
+        .popout-btn:hover,
+        .mode-select:hover {
+            background: #f1f3f4;
+        }
+
+        .time-bar {
+            font-size: 10px;
+            color: #70757a;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .badge-spark {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        .badge-flow {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 13px;
+        }
+
+        .val {
+            font-weight: 700;
+            color: #1e8e3e;
+            font-size: 14px;
+        }
+
+        .subtext {
+            font-size: 10px;
+            color: #70757a;
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #f1f3f4;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>⚡ AI Quota</h1>
+        <div class="controls">
+            <!-- 동작 모드 설정 -->
+            <select id="modeSelect" class="mode-select" title="클릭 시 기본 실행 모드">
+                <option value="menu">메뉴형</option>
+                <option value="window">독립 창형</option>
+            </select>
+            <!-- 즉시 창 분리 버튼 -->
+            <button id="popoutBtn" class="popout-btn" title="새 창으로 분리">🗗</button>
+        </div>
+    </div>
+
+    <div class="time-bar" id="updatedAt">-</div>
+
+    <div class="card">
+        <span class="badge badge-spark">Gemini Spark</span>
+        <div class="row">
+            <span>현재 사용량</span>
+            <span class="val" id="curVal">-</span>
+        </div>
+        <div class="subtext" id="curReset">-</div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+            <span>주간 한도</span>
+            <span class="val" id="weekVal">-</span>
+        </div>
+        <div class="subtext" id="weekReset">-</div>
+    </div>
+
+    <div class="card">
+        <span class="badge badge-flow">Google Flow</span>
+        <div class="row">
+            <span>보유 크레딧</span>
+            <span class="val" style="color: #137333;" id="flowCredit">-</span>
+        </div>
+        <div class="subtext" id="flowSub">-</div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,76 @@
+# ⚡ AI Quota Monitor (Gemini & Google Flow)
+
+Google Gemini의 사용량(현재 쿼터 및 주간 한도)과 Google One AI Premium의 Flow 잔여 크레딧을 한눈에 모니터링할 수 있는 독립형 경량 도구입니다.
+
+초기 프로토타입으로 개발된 **Tampermonkey 유저스크립트 방식**과, 서버/외부 확장 프로그램 없이 브라우저 자체 기능으로 완성된 **Chrome 확장 프로그램(Manifest V3) 방식**을 모두 포함하고 있습니다.
+
+---
+
+## 📁 프로젝트 구조
+
+```text
+gemini-gauge/
+├── manifest.json              # Chrome 확장 프로그램 매니페스트 (Manifest V3)
+├── background.js              # 서비스 워커 (모드별 팝업 제어 및 창 생성)
+├── collector.js               # 데이터 수집 스크립트 (사용량 텍스트 파싱)
+├── dashboard.html             # 대시보드 뷰 UI 템플릿
+├── dashboard.js               # chrome.storage 바인딩 및 모드 제어 스크립트
+│
+├── tampermonkey/              # [레거시] 이전 유저스크립트 보관 폴더
+│   └── gemini-unified.user.js # Tampermonkey 통합 스크립트
+│
+├── .gitignore                 # 로컬 프로필 및 불필요 파일 제외 설정
+└── README.md                  # 프로젝트 사용 및 개발 가이드
+```
+
+---
+
+## 🚀 방법 1: 전용 Chrome 확장 프로그램 (권장)
+
+외부 도구(Tampermonkey, 별도 Python 로컬 서버 등) 없이 순수 웹 표준과 크롬 내장 API(`chrome.storage`, `chrome.windows`)로만 구동되는 방식입니다.
+
+### 1. 주요 특징
+* **서버리스**: 별도의 로컬 웹 서버 실행 없이 동작
+* **동적 뷰 모드 지원**:
+  * **메뉴형 (기본)**: 크롬 툴바 아이콘 클릭 시 아래로 열리는 말풍선 팝업
+  * **독립 창형**: 크롬 UI(주소창, 탭 표시줄)가 일체 없는 데스크톱 미니 위젯 창
+  * **즉시 분리 (`🗗`)**: 메뉴형으로 보다가 버튼 한 번으로 독립 창 전환 가능
+* **자동 동기화**: `chrome.storage.local`을 이용해 최신 수치가 감지되는 즉시 대시보드에 실시간 반영
+
+### 2. 설치 방법
+1. Chrome 브라우저 주소창에 `chrome://extensions`를 입력하여 이동합니다.
+2. 우측 상단의 **[개발자 모드]** 토글을 켭니다.
+3. 좌측 상단의 **[압축해제된 확장 프로그램을 로드합니다]** 버튼을 클릭합니다.
+4. 이 저장소의 루트 폴더(`gemini-gauge`)를 선택합니다.
+5. 브라우저 우측 상단 퍼즐 아이콘(확장 프로그램 목록)을 눌러 **Gemini Quota Mini Dashboard**를 툴바에 고정(핀)합니다.
+
+### 3. 데이터 수집 및 사용
+1. 데이터가 비어 있는 초기 상태에서는 아래 수집 대상 페이지를 한 번 방문하거나 새로고침합니다.
+   * Gemini 사용량: `https://gemini.google.com/usage`
+   * Google Flow 활동: `https://one.google.com/ai/activity`
+2. 툴바의 **AI Quota 아이콘**을 클릭하여 수치를 확인합니다.
+3. 상단 헤더의 드롭다운에서 **[메뉴형]** 또는 **[독립 창형]**을 선택해 원하는 방식으로 전환할 수 있습니다.
+
+---
+
+## 🛠 방법 2: Tampermonkey 유저스크립트 (레거시)
+
+확장 프로그램을 직접 로드하지 않고 유저스크립트 관리자 확장(Tampermonkey) 안에서 실행하고 싶을 때 사용하는 방식입니다.
+
+### 1. 특징 및 동작 원리
+* `gemini.google.com` 및 `one.google.com` 페이지 접속 시 페이지 우측 하단에 플로팅 형태의 모니터링 카드를 직접 오버레이합니다.
+* 크로스 도메인 간 데이터 공유를 위해 `GM_setValue` / `GM_getValue`를 활용합니다.
+* Google의 Trusted Types 보안 정책 및 SPA 페이지 전환 특성을 고려하여 작성되었습니다.
+
+### 2. 설치 방법
+1. 브라우저에 **Tampermonkey** 확장 프로그램을 설치합니다.
+2. Tampermonkey 대시보드 ➔ **새 스크립트 추가(+)**를 클릭합니다.
+3. `tampermonkey/gemini-unified.user.js` 파일의 전체 내용을 복사하여 붙여넣고 저장(`Ctrl + S`)합니다.
+4. `https://gemini.google.com/usage`에 접속하여 우측 하단에 위젯이 뜨는지 확인합니다.
+
+---
+
+## 🔒 보안 및 기여 참고사항
+
+* **보안 정책(CSP) 준수**: 확장 프로그램의 모든 스크립트는 Manifest V3의 보안 가이드라인에 따라 인라인 스크립트를 배제하고 외부 JS 파일(`dashboard.js`, `collector.js`)로 분리되어 있습니다.
+* **개인 세션 격리**: 테스트 목적으로 별도의 크롬 프로필(`--user-data-dir`)을 사용할 경우 해당 폴더 내에 로그인 쿠키가 저장될 수 있으므로, 해당 경로는 `.gitignore`에 등록하여 Git 추적에서 제외해야 합니다.
