@@ -18,14 +18,13 @@
             padding: 16px;
             user-select: none;
             width: 320px;
-            /* 말풍선 메뉴로 뜰 때의 기본 가로폭 */
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .header h1 {
@@ -34,15 +33,10 @@
             color: #1a73e8;
         }
 
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .mode-select {
+        .mode-select,
+        .account-select {
             font-size: 11px;
-            padding: 2px 4px;
+            padding: 3px 6px;
             border: 1px solid #dadce0;
             border-radius: 4px;
             background: #fff;
@@ -51,26 +45,63 @@
             outline: none;
         }
 
-        .popout-btn {
-            font-size: 11px;
-            background: none;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 2px 6px;
-            color: #5f6368;
-        }
-
-        .popout-btn:hover,
-        .mode-select:hover {
+        .mode-select:hover,
+        .account-select:hover {
             background: #f1f3f4;
         }
 
-        .time-bar {
-            font-size: 10px;
+        .account-select {
+            max-width: 175px;
+            color: #1a73e8;
+            font-weight: 600;
+            text-overflow: ellipsis;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
             color: #70757a;
-            text-align: right;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            padding: 0 2px;
+        }
+
+        .time-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .time-text {
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .sync-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: #70757a;
+            padding: 2px;
+            border-radius: 50%;
+            line-height: 1;
+            transition: transform 0.3s ease, color 0.2s;
+        }
+
+        .sync-btn:hover {
+            color: #1a73e8;
+        }
+
+        .sync-btn.rotating {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .card {
@@ -83,12 +114,20 @@
         }
 
         .badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
             font-size: 10px;
             font-weight: 600;
-            padding: 2px 6px;
+            padding: 3px 7px;
             border-radius: 4px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .badge:hover {
+            filter: brightness(0.92);
         }
 
         .badge-spark {
@@ -132,21 +171,24 @@
 <body>
     <div class="header">
         <h1>⚡ AI Quota</h1>
-        <div class="controls">
-            <!-- 동작 모드 설정 -->
-            <select id="modeSelect" class="mode-select" title="클릭 시 기본 실행 모드">
-                <option value="menu">메뉴형</option>
-                <option value="window">독립 창형</option>
-            </select>
-            <!-- 즉시 창 분리 버튼 -->
-            <button id="popoutBtn" class="popout-btn" title="새 창으로 분리">🗗</button>
+        <select id="modeSelect" class="mode-select">
+            <option value="menu">메뉴형</option>
+            <option value="window">독립 창형</option>
+        </select>
+    </div>
+
+    <div class="meta-row">
+        <select id="accountSelect" class="account-select">
+            <option value="">계정 확인 중...</option>
+        </select>
+        <div class="time-group">
+            <span class="time-text" id="updatedAt">-</span>
+            <button class="sync-btn" id="btnSync" title="지금 백그라운드에서 동기화">🔄</button>
         </div>
     </div>
 
-    <div class="time-bar" id="updatedAt">-</div>
-
     <div class="card">
-        <span class="badge badge-spark">Gemini Spark</span>
+        <div class="badge badge-spark" id="btnGemini" title="클릭 시 Gemini 열기">Gemini Spark ↗</div>
         <div class="row">
             <span>현재 사용량</span>
             <span class="val" id="curVal">-</span>
@@ -163,7 +205,7 @@
     </div>
 
     <div class="card">
-        <span class="badge badge-flow">Google Flow</span>
+        <div class="badge badge-flow" id="btnFlow" title="클릭 시 Google Flow 열기">Google Flow ↗</div>
         <div class="row">
             <span>보유 크레딧</span>
             <span class="val" style="color: #137333;" id="flowCredit">-</span>

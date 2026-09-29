@@ -1,12 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Gemini Quota Mini Dashboard",
-  "version": "1.0",
+  "version": "1.1",
   "permissions": [
-    "storage"
+    "storage",
+    "tabs",
+    "alarms"
   ],
   "action": {
-    "default_title": "AI 쿼터 대시보드"
+    "default_title": "AI 쿼터 대시보드",
+    "default_popup": "dashboard.html"
   },
   "background": {
     "service_worker": "background.js"
@@ -14,8 +17,9 @@
   "content_scripts": [
     {
       "matches": [
-        "https://gemini.google.com/usage*",
-        "https://one.google.com/ai/activity*"
+        "https://gemini.google.com/*",
+        "https://one.google.com/*",
+        "https://flow.google.com/*"
       ],
       "js": [
         "collector.js"

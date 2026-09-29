@@ -1,31 +1,61 @@
-// 시작 시 또는 설치 시 저장된 모드 적용
-function applyViewMode() {
-    chrome.storage.local.get(['viewMode'], (res) => {
-        const mode = res.viewMode || 'menu'; // 기본값: 툴바 메뉴형
-        if (mode === 'menu') {
-            chrome.action.setPopup({ popup: 'dashboard.html' });
-        } else {
-            chrome.action.setPopup({ popup: '' }); // 빈 문자열이어야 onClicked가 작동
-        }
+// 동기화용으로 생성된 임시 탭 ID들을 보관하는 Set
+const syncTabIds = new Set();
+
+function syncQuotas() {
+    const urls = [
+        'https://gemini.google.com/usage',
+        'https://one.google.com/ai/activity?utm_source=flow&utm_medium=web&utm_campaign=flow_ai_credits_page'
+    ];
+
+    urls.forEach((url) => {
+        chrome.tabs.create({ url, active: false }, (tab) => {
+            if (tab && tab.id) {
+                syncTabIds.add(tab.id);
+
+                // 네트워크 지연이나 SPA 렌더링 지연이 있더라도 최대 6초 뒤에는 무조건 탭 강제 정리
+                setTimeout(() => {
+                    if (syncTabIds.has(tab.id)) {
+                        chrome.tabs.remove(tab.id, () => {
+                            chrome.runtime.lastError; // 닫힌 탭 에러 무시
+                        });
+                        syncTabIds.delete(tab.id);
+                    }
+                }, 6000);
+            }
+        });
     });
 }
 
-chrome.runtime.onInstalled.addListener(applyViewMode);
-chrome.runtime.onStartup.addListener(applyViewMode);
+// 30분 주기 알람 등록
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.alarms.create('periodicQuotaSync', { periodInMinutes: 30 });
+});
 
-// 스토리지의 viewMode 값이 변경되면 즉시 반영
-chrome.storage.onChanged.addListener((changes) => {
-    if (changes.viewMode) {
-        applyViewMode();
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'periodicQuotaSync') {
+        syncQuotas();
     }
 });
 
-// 'window' 모드일 때 아이콘 클릭 시 독립 창 띄우기
-chrome.action.onClicked.addListener(() => {
-    chrome.windows.create({
-        url: chrome.runtime.getURL('dashboard.html'),
-        type: 'popup',
-        width: 340,
-        height: 480
-    });
+// 메시지 리스너
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    // 1. 수동 동기화 요청
+    if (msg.action === 'startSync') {
+        syncQuotas();
+        sendResponse({ status: 'started' });
+    }
+
+    // 2. collector.js에서 데이터 수집 완료 보고 시
+    if (msg.action === 'dataCollected' && sender.tab?.id) {
+        const tabId = sender.tab.id;
+        // 임시로 열었던 수집용 탭인 경우 즉시 닫기
+        if (syncTabIds.has(tabId)) {
+            setTimeout(() => {
+                chrome.tabs.remove(tabId, () => {
+                    chrome.runtime.lastError;
+                });
+                syncTabIds.delete(tabId);
+            }, 500); // 데이터 반영 안전 시간 0.5초 대기 후 닫기
+        }
+    }
 });
