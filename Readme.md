@@ -98,3 +98,9 @@ Google의 쿼터 및 크레딧 페이지(`gemini.google.com/usage`, `one.google.
 * **보안 정책(CSP) 준수**: 확장 프로그램의 모든 스크립트는 Manifest V3의 보안 가이드라인에 따라 인라인 스크립트를 배제하고 외부 JS 파일(`dashboard.js`, `collector.js`, `background.js`)로 분리되어 있습니다.
 * **비간섭 백그라운드 라이프사이클**: 서비스 워커는 비동기 이벤트(`chrome.alarms`, 메시지 리스너) 기반으로만 동작하여 브라우저 리소스 소비를 최소화합니다.
 * **개인 세션 격리**: 테스트 목적으로 별도의 크롬 프로필(`--user-data-dir`)을 사용할 경우 해당 폴더 내에 로그인 쿠키가 저장될 수 있으므로, 해당 경로는 `.gitignore`에 등록하여 Git 추적에서 제외해야 합니다.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
