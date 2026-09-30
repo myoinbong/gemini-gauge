@@ -1,4 +1,3 @@
-// 동기화용으로 생성된 임시 탭 ID들을 보관하는 Set
 const syncTabIds = new Set();
 
 function syncQuotas() {
@@ -12,11 +11,10 @@ function syncQuotas() {
             if (tab && tab.id) {
                 syncTabIds.add(tab.id);
 
-                // 네트워크 지연이나 SPA 렌더링 지연이 있더라도 최대 6초 뒤에는 무조건 탭 강제 정리
                 setTimeout(() => {
                     if (syncTabIds.has(tab.id)) {
                         chrome.tabs.remove(tab.id, () => {
-                            chrome.runtime.lastError; // 닫힌 탭 에러 무시
+                            chrome.runtime.lastError;
                         });
                         syncTabIds.delete(tab.id);
                     }
@@ -26,36 +24,57 @@ function syncQuotas() {
     });
 }
 
-// 30분 주기 알람 등록
+// 1. 알람 보장 함수 (설치 시점뿐만 아니라 브라우저 시작 시에도 무조건 체크/생성)
+function setupAlarm() {
+    chrome.alarms.get('periodicQuotaSync', (alarm) => {
+        if (!alarm) {
+            chrome.alarms.create('periodicQuotaSync', {
+                delayInMinutes: 1,      // 브라우저 켜지고 1분 뒤 첫 자동 동기화
+                periodInMinutes: 30     // 이후 30분마다 반복
+            });
+            console.log('[Background] 자동 동기화 알람 등록 완료');
+        }
+    });
+}
+
+// 확장 프로그램 설치/업데이트 시 등록
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.alarms.create('periodicQuotaSync', { periodInMinutes: 30 });
+    setupAlarm();
 });
 
+// 브라우저 최초 실행(시작) 시에도 알람 보장 및 초기 동기화 트리거
+chrome.runtime.onStartup.addListener(() => {
+    setupAlarm();
+    syncQuotas(); // 브라우저 켜지면 즉시 최신화
+});
+
+// 알람 주기 트리거
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'periodicQuotaSync') {
+        console.log('[Background] 30분 주기 자동 동기화 실행');
         syncQuotas();
     }
 });
 
 // 메시지 리스너
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    // 1. 수동 동기화 요청
     if (msg.action === 'startSync') {
         syncQuotas();
         sendResponse({ status: 'started' });
     }
 
-    // 2. collector.js에서 데이터 수집 완료 보고 시
     if (msg.action === 'dataCollected' && sender.tab?.id) {
         const tabId = sender.tab.id;
-        // 임시로 열었던 수집용 탭인 경우 즉시 닫기
         if (syncTabIds.has(tabId)) {
             setTimeout(() => {
                 chrome.tabs.remove(tabId, () => {
                     chrome.runtime.lastError;
                 });
                 syncTabIds.delete(tabId);
-            }, 500); // 데이터 반영 안전 시간 0.5초 대기 후 닫기
+            }, 500);
         }
     }
 });
+
+// 서비스 워커 시작 시에도 알람 항상 확인
+setupAlarm();
